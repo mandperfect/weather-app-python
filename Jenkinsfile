@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         DOCKERHUB_USER = "mandperfect"
-        DOCKER_PATH = "weather-app-python"
+        //DOCKER_PATH = "weather-app-python"
         
     }
 
@@ -28,7 +28,7 @@ pipeline {
 
                     for (service in services) {
                         sh """
-                        docker build -t ${DOCKERHUB_USER}/${service}:latest ${DOCKER_PATH}/${service}
+                        docker build -t ${DOCKERHUB_USER}/${service}:latest
                         """
                     }
                 }
