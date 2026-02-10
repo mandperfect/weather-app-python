@@ -2,10 +2,9 @@ pipeline {
     agent any
 
     environment {
-            DOCKERHUB_USER = "mandperfect"
-            IMAGE_NAME = "weather-app-build"
-            IMAGE_TAG = "2.0"
-            SERVICES = "gateway:4000 weather-service:5000 alert-service:6000"
+        DOCKERHUB_USER = "mandperfect"
+        IMAGE_TAG = "latest"
+        SERVICES = "gateway:4000 weather-service:5000 alert-service:6000"
     }
 
     stages {
@@ -28,27 +27,18 @@ pipeline {
                     echo "Expected Port: $port"
                     echo "-----------------------------------------"
 
-                    docker build -t $DOCKERHUB_USER:IMAGE_NAME ./$IMAGE_TAG .
-                    // docker build -t $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG .
+                    docker build -t ${name}:${IMAGE_TAG} ./${name}
                 done
                 '''
             }
         }
 
-        stage('List Built Images (Reliable Check)') {
+        stage('List Built Images') {
             steps {
                 sh '''
-                echo "========== Docker Images Built by Jenkins =========="
+                echo "========== Docker Images Built =========="
                 docker images | grep -E "gateway|weather-service|alert-service" || true
-                echo "===================================================="
-                '''
-            }
-        }
-
-        stage('Verify Images') {
-            steps {
-                sh '''
-                docker images | grep -E "gateway|weather-service|alert-service" || true
+                echo "========================================="
                 '''
             }
         }
