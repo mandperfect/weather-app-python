@@ -2,7 +2,10 @@ pipeline {
     agent any
 
     environment {
-        SERVICES = "gateway:4000 weather-service:5000 alert-service:6000"
+            DOCKERHUB_USER = "mandperfect"
+            IMAGE_NAME = "weather-app-build"
+            IMAGE_TAG = "2.0"
+            SERVICES = "gateway:4000 weather-service:5000 alert-service:6000"
     }
 
     stages {
@@ -25,7 +28,8 @@ pipeline {
                     echo "Expected Port: $port"
                     echo "-----------------------------------------"
 
-                    docker build -t ${name}:latest ./${name}
+                    docker build -t $DOCKERHUB_USER:IMAGE_NAME ./$IMAGE_TAG .
+                    // docker build -t $DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG .
                 done
                 '''
             }
