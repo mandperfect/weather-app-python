@@ -31,6 +31,16 @@ pipeline {
             }
         }
 
+        stage('List Built Images (Reliable Check)') {
+            steps {
+                sh '''
+                echo "========== Docker Images Built by Jenkins =========="
+                docker images | grep -E "gateway|weather-service|alert-service" || true
+                echo "===================================================="
+                '''
+            }
+        }
+
         stage('Verify Images') {
             steps {
                 sh '''
