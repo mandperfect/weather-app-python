@@ -1,55 +1,71 @@
 pipeline {
-    agent any
+     agent {
+        docker {
+            image 'docker:29.0-cli'
+            //args '--privileged -v /var/run/docker.sock:/var/run/docker.sock --user root'
+        }
+    }
 
     environment {
         DOCKERHUB_USER = "mandperfect"
-        IMAGE_TAG = "latest"
-        SERVICES = "gateway:4000 weather-service:5000 alert-service:6000"
+        DOCKER_PATH = "weather-app-python"
+        
     }
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Checkout Code from SCM') {
             steps {
-                git branch: 'main', url: 'https://github.com/mandperfect/weather-app-python.git'
+                git branch: 'main',
+                url: 'https://github.com/mandperfect/weather-app-python.git'
             }
         }
 
-        stage('Build Docker Images (Using Loop)') {
+        stage('Build Docker Images') {
             steps {
-                sh '''
-                for service in $SERVICES; do
-                    name=$(echo $service | cut -d':' -f1)
-                    port=$(echo $service | cut -d':' -f2)
+                script {
+                    services = ["alert-service", "gateway", "weather-service"]
 
-                    echo "-----------------------------------------"
-                    echo "Building Docker Image for: $name"
-                    echo "Expected Port: $port"
-                    echo "-----------------------------------------"
-
-                    docker build -t ${name}:${IMAGE_TAG} ./${name}
-                done
-                '''
+                    for (service in services) {
+                        sh """
+                        docker build -t ${DOCKERHUB_USER}/${service}:latest ${DOCKER_PATH}/${service}
+                        """
+                    }
+                }
             }
         }
 
-        stage('List Built Images') {
+        stage('Push Docker Images') {
             steps {
-                sh '''
-                echo "========== Docker Images Built =========="
-                docker images | grep -E "gateway|weather-service|alert-service" || true
-                echo "========================================="
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-cred',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'PASS'
+                )]) {
+                    sh """
+                    echo $PASS | docker login -u $DOCKER_USER --password-stdin
+                    """
+
+                    script {
+                        services = ["alert-service", "gateway", "weather-service"]
+
+                        for (service in services) {
+                            sh """
+                            docker push ${DOCKERHUB_USER}/${service}:latest
+                            """
+                        }
+                    }
+                }
             }
         }
     }
 
     post {
         success {
-            echo "All three Docker images built successfully!"
+            echo "All images built and pushed successfully"
         }
         failure {
-            echo "Build failed. Check logs."
+            echo "Build Pipeline failed. Please check the logs for details."
         }
     }
 }
